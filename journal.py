@@ -5,9 +5,12 @@ while True:
     if selection == "1":
         entry = input("Please type your entry here:  ")
         with open("entries.txt", "a") as file:
-            file.write(entry + "\n")
+            file.write(entry)
     elif selection == "2":
-        print("Viewing Entries")
+        with open("entries.txt") as file:
+            for line in file:
+                print(line, end = "")
+
     elif selection == "3":
         print("Quitting Program")
         break
