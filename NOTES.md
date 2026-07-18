@@ -79,8 +79,8 @@ lists, string methods, f-strings, functions, and file I/O.
 ### Build order
 1. **Setup** — git init, repo structure, first commit ✅ DONE
 2. **Core loop** — while loop + menu (add entry / view entries / quit) using `break` ✅ DONE
-3. **Writing entries** — `open()` in append mode, save entry to file ⬅️ NEXT
-4. **Reading entries back** — open file, print past entries
+3. **Writing entries** — `open()` in append mode, save entry to file ✅ DONE
+4. **Reading entries back** — open file, print past entries ⬅️ NEXT
 5. **Analysis features** — word count, longest entry, keyword search
    (functions + string methods)
 6. **Error handling** — try/except throughout (e.g. missing file on first run)
@@ -88,10 +88,56 @@ lists, string methods, f-strings, functions, and file I/O.
 8. **Git wrap-up** — meaningful commit history, maybe a `.gitignore`
    (add `.DS_Store` to it)
 
+### Step 3 notes (new concepts learned, not from futurecoder)
+- `open()` takes a second argument controlling mode: `"r"` (read, default),
+  `"w"` (overwrite/erase), `"a"` (append — adds to end, preserves existing content)
+- `open(filename, "a")` auto-creates the file if it doesn't already exist —
+  confirmed by testing, no need to pre-create the entries file
+- `.write(text)` only accepts strings, does **not** auto-add a newline
+  (unlike `print()`) — forgetting `"\n"` runs entries together on one line
+- `.write()` returns the number of characters written (e.g. `7` for `"Testing"`)
+- Writes are buffered — nothing actually lands in the file until the file is
+  closed. Manual `open()`/`.close()` works but is risky (skipped `.close()`
+  if the program crashes = lost data)
+- `with open(filename, "a") as file:` is the safer pattern — auto-closes the
+  file when the block ends, even on error. Preferred going forward.
+- Current working add-entry code:
+  ```python
+  if selection == "1":
+      entry = input("Please type your entry here:  ")
+      with open("entries.txt", "a") as file:
+          file.write(entry + "\n")
+  ```
+- Decision: `entries.txt` is fine to commit/push publicly for this project —
+  no personal/sensitive content planned in test entries
+- Reminder for step 4: a random person cloning the public repo and running
+  the program only writes to *their own local copy* of entries.txt — they
+  have no push access to the actual GitHub repo unless added as a collaborator
+
+### Current full code (end of step 3)
+```python
+print("Welcome to your journal. Enter 1 to Add Entry, 2 to View Entries, 3 to Quit")
+
+while True:
+    selection = input("Please enter selection.  ").strip()
+    if selection == "1":
+        entry = input("Please type your entry here:  ")
+        with open("entries.txt", "a") as file:
+            file.write(entry + "\n")
+    elif selection == "2":
+        print("Viewing Entries")
+    elif selection == "3":
+        print("Quitting Program")
+        break
+    else:
+        print("Invalid Entry.")
+```
+
 ### Working style reminder (for Claude, when we resume)
 - Socratic / hint-based — nudge toward the answer, don't hand it over
 - Walk through logic in plain English before any code
-- Stay within concepts already covered in futurecoder lessons
+- Stay within concepts already covered in futurecoder lessons — but new gaps
+  (like file-write mechanics above) get taught directly first, then practiced
 - If stuck, ask a guiding question rather than explaining the fix
 
 ### Git habit while building
