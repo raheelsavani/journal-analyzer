@@ -12,8 +12,21 @@ git push                 # send commits to GitHub (needs internet)
 git pull                 # fetch + merge changes from GitHub (needs internet)
 ```
 **The mental model:** `add` builds up what you *want* to commit (staging area).
-`commit` locks it into local history. `push` sends that history to GitHub.
-None of the first three need internet — only `push`/`pull` do.
+`commit` takes a snapshot of everything currently staged, with a caption (`-m`).
+`push` sends that history to GitHub. None of the first three need internet — only `push`/`pull` do.
+
+**Multi-file workflow (current approach):** you don't have to add/commit/push after
+every single file change. You can stage and commit files separately (e.g. code first,
+then notes), and batch multiple commits into a single `push` at the end:
+```bash
+git add journal_analyzer.py
+git commit -m "add read-entries feature"
+git add NOTES.md
+git commit -m "update notes for step 4"
+git push
+```
+Two commits, one push — push just sends whatever hasn't gone up yet, however many
+commits are waiting.
 
 ### Checking things
 ```bash
@@ -52,22 +65,6 @@ git push
 Worth adding `.DS_Store` to `.gitignore` eventually (see step 8 below) so this
 doesn't recur.
 
----
-
-## This machine's setup (as of Jul 17, 2026)
-- Git version: 2.50.1 (Apple Git-155)
-- Git config: user.name = Raheel_Savani, user.email = raheelsavani@gmail.com
-- Auth method: HTTPS + Personal Access Token (classic), scope: `repo` only
-  - Token stored in macOS Keychain after first push — shouldn't need to re-enter
-    unless it expires or Keychain forgets it
-- No SSH keys on this Mac (auth is HTTPS/token-based, not SSH)
-- VS Code updated to 1.129.1, Python extension (Microsoft, official) installed
-  and working — run Python files with the ▶️ "Run Python File" button in the
-  top-right of the editor, no debugger extension needed for this project
-- Always open the project via File → Open Folder... (not just the single file)
-  so VS Code treats it as a proper workspace
-
----
 
 ## Project: Journal / Log Analyzer
 
@@ -80,41 +77,38 @@ lists, string methods, f-strings, functions, and file I/O.
 1. **Setup** — git init, repo structure, first commit ✅ DONE
 2. **Core loop** — while loop + menu (add entry / view entries / quit) using `break` ✅ DONE
 3. **Writing entries** — `open()` in append mode, save entry to file ✅ DONE
-4. **Reading entries back** — open file, print past entries ⬅️ NEXT
+4. **Reading entries back** — open file, print past entries ✅ DONE
 5. **Analysis features** — word count, longest entry, keyword search
-   (functions + string methods)
+   (functions + string methods) ⬅️ NEXT
 6. **Error handling** — try/except throughout (e.g. missing file on first run)
 7. **Polish + README** — proper README describing the tool
 8. **Git wrap-up** — meaningful commit history, maybe a `.gitignore`
    (add `.DS_Store` to it)
 
-### Step 3 notes (new concepts learned, not from futurecoder)
-- `open()` takes a second argument controlling mode: `"r"` (read, default),
-  `"w"` (overwrite/erase), `"a"` (append — adds to end, preserves existing content)
-- `open(filename, "a")` auto-creates the file if it doesn't already exist —
-  confirmed by testing, no need to pre-create the entries file
-- `.write(text)` only accepts strings, does **not** auto-add a newline
-  (unlike `print()`) — forgetting `"\n"` runs entries together on one line
-- `.write()` returns the number of characters written (e.g. `7` for `"Testing"`)
-- Writes are buffered — nothing actually lands in the file until the file is
-  closed. Manual `open()`/`.close()` works but is risky (skipped `.close()`
-  if the program crashes = lost data)
-- `with open(filename, "a") as file:` is the safer pattern — auto-closes the
-  file when the block ends, even on error. Preferred going forward.
-- Current working add-entry code:
-  ```python
-  if selection == "1":
-      entry = input("Please type your entry here:  ")
-      with open("entries.txt", "a") as file:
-          file.write(entry + "\n")
-  ```
-- Decision: `entries.txt` is fine to commit/push publicly for this project —
-  no personal/sensitive content planned in test entries
-- Reminder for step 4: a random person cloning the public repo and running
-  the program only writes to *their own local copy* of entries.txt — they
-  have no push access to the actual GitHub repo unless added as a collaborator
+### Step 4 notes (new concepts learned, not from futurecoder)
+- A file object opened with `open("entries.txt")` (no mode arg = defaults to `"r"`,
+  read-only) is iterable — `for line in file:` loops over it one line at a time
+- Each `line` already ends in `"\n"` (carried over from how entries were saved in
+  step 3 with `.write(entry + "\n")`)
+- `print()` also adds its own trailing `"\n"` by default — combined with the `"\n"`
+  already in `line`, this produces a blank line between each printed entry
+- `print()` has an `end` parameter (default `end="\n"`) that controls what gets
+  printed after the given text — `print(line, end="")` suppresses print's own
+  newline, removing the double-gap effect
+- Decision: kept the double-newline gap (default `print(line)`, no `end` override) —
+  it improves readability for a personal journal tool. Considered but explicitly
+  rejected building a user-facing formatting choice (tight vs. spaced entries via
+  an input prompt) — concluded the mechanics were easy but the feature added no
+  real value for a single-user personal tool; not worth the complexity
+- Current working view-entries code:
+```python
+  elif selection == "2":
+      with open("entries.txt") as file:
+          for line in file:
+              print(line)
+```
 
-### Current full code (end of step 3)
+### Current full code (end of step 4)
 ```python
 print("Welcome to your journal. Enter 1 to Add Entry, 2 to View Entries, 3 to Quit")
 
@@ -125,7 +119,9 @@ while True:
         with open("entries.txt", "a") as file:
             file.write(entry + "\n")
     elif selection == "2":
-        print("Viewing Entries")
+        with open("entries.txt") as file:
+            for line in file:
+                print(line)
     elif selection == "3":
         print("Quitting Program")
         break
@@ -137,10 +133,11 @@ while True:
 - Socratic / hint-based — nudge toward the answer, don't hand it over
 - Walk through logic in plain English before any code
 - Stay within concepts already covered in futurecoder lessons — but new gaps
-  (like file-write mechanics above) get taught directly first, then practiced
+  (like file-write/file-read mechanics) get taught directly first, then practiced
 - If stuck, ask a guiding question rather than explaining the fix
 
 ### Git habit while building
-Commit after each meaningful step above (e.g. "add core menu loop", "add entry
-writing with append mode") rather than one giant commit at the end. Small,
-descriptive commits make it easier to see progress and undo mistakes if needed.
+Batch commits, don't have to push after every one. Pattern: modify code, modify
+NOTES.md, then `git add <file>` + `git commit -m "..."` separately for each file
+(code first, then notes), followed by a single `git push` at the end covering
+both commits.
