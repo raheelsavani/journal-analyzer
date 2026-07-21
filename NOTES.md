@@ -78,56 +78,44 @@ lists, string methods, f-strings, functions, and file I/O.
 2. **Core loop** — while loop + menu (add entry / view entries / quit) using `break` ✅ DONE
 3. **Writing entries** — `open()` in append mode, save entry to file ✅ DONE
 4. **Reading entries back** — open file, print past entries ✅ DONE
-5. **Analysis features** — word count, longest entry, keyword search
-   (functions + string methods) ⬅️ NEXT
+5a. **Analysis features, part 1** — word count + longest entry (functions, return values) ✅ DONE
+5b. **Analysis features, part 2** — keyword search ⬅️ NEXT
 6. **Error handling** — try/except throughout (e.g. missing file on first run)
 7. **Polish + README** — proper README describing the tool
-8. **Git wrap-up** — meaningful commit history, maybe a `.gitignore`
-   (add `.DS_Store` to it)
+8. **Git wrap-up** — meaningful commit history, maybe a `.gitignore` (add `.DS_Store` to it)
 
-### Step 4 notes (new concepts learned, not from futurecoder)
-- A file object opened with `open("entries.txt")` (no mode arg = defaults to `"r"`,
-  read-only) is iterable — `for line in file:` loops over it one line at a time
-- Each `line` already ends in `"\n"` (carried over from how entries were saved in
-  step 3 with `.write(entry + "\n")`)
-- `print()` also adds its own trailing `"\n"` by default — combined with the `"\n"`
-  already in `line`, this produces a blank line between each printed entry
-- `print()` has an `end` parameter (default `end="\n"`) that controls what gets
-  printed after the given text — `print(line, end="")` suppresses print's own
-  newline, removing the double-gap effect
-- Decision: kept the double-newline gap (default `print(line)`, no `end` override) —
-  it improves readability for a personal journal tool. Considered but explicitly
-  rejected building a user-facing formatting choice (tight vs. spaced entries via
-  an input prompt) — concluded the mechanics were easy but the feature added no
-  real value for a single-user personal tool; not worth the complexity
-- Current working view-entries code:
-```python
-  elif selection == "2":
-      with open("entries.txt") as file:
-          for line in file:
-              print(line)
-```
-
-### Current full code (end of step 4)
-```python
-print("Welcome to your journal. Enter 1 to Add Entry, 2 to View Entries, 3 to Quit")
-
-while True:
-    selection = input("Please enter selection.  ").strip()
-    if selection == "1":
-        entry = input("Please type your entry here:  ")
-        with open("entries.txt", "a") as file:
-            file.write(entry + "\n")
-    elif selection == "2":
-        with open("entries.txt") as file:
-            for line in file:
-                print(line)
-    elif selection == "3":
-        print("Quitting Program")
-        break
-    else:
-        print("Invalid Entry.")
-```
+### Step 5a notes (word count + longest entry, functions + return values)
+- Redesigned menu: 1=New Entry, 2=View Entries, 3=Keyword Search, 4=Analyze, 5=Quit
+- Considered a separate "Analyze" sub-menu with its own input prompt, then dropped it —
+  Analyze just runs two functions back-to-back with no user choice, so no sub-menu,
+  no extra input validation, and no inner loop needed
+- `word_count()` and `longest_line()` each `return` their result instead of printing it,
+  so option 4 can combine both into a single `print(f"...")` message
+- Function definitions live at the top of `journal.py`, above the main `while True:` loop
+- Wrote and tested each function standalone (temporary `print(word_count())` call above
+  the loop) before touching/restructuring the menu, to isolate logic bugs from wiring bugs
+- `word_count()`: accumulator set to `0` above the loop; for each line, `.strip()` then
+  `.split()` into a list of words, add `len()` of that list to the accumulator, `return`
+  the accumulator after the loop
+- `longest_line()`: `longest = ""` before the loop (guarantees the first real line always
+  wins the first comparison, since any real entry has `len() > 0`); for each line,
+  `.strip()` then `.split()` then `" ".join()` back into a single-spaced string (this
+  normalizes away extra/doubled internal spaces so accidental double-spacing can't
+  artificially inflate an entry's length); compare `len()` of that normalized string
+  against `len(longest)` with `>`, update `longest` if greater; `return longest` after
+  the loop
+- Bug caught during testing: found `elif selection == "1":` was missing `+ "\n"` on the
+  `file.write()` call — confirmed via `git diff` that this was never actually committed/
+  pushed from the Mac (despite step 3/4 notes saying it was done), not a git pull issue.
+  Fixed and will be committed with this update.
+- Confirmed via testing: `word_count()` and `longest_line()` called directly inside an
+  f-string (e.g. `{word_count()}`) get evaluated immediately when Python builds the
+  string — no need to store the return value in a variable first, though doing so is
+  also valid
+- Real-world gap found (not solved yet, deferred to step 6 by design): a missing
+  `entries.txt` file (e.g. on a freshly cloned machine, since it's gitignored) causes a
+  crash if the user picks any option other than "1" first. Step 6 (error handling) is
+  the intended fix.
 
 ### Working style reminder (for Claude, when we resume)
 - Socratic / hint-based — nudge toward the answer, don't hand it over
