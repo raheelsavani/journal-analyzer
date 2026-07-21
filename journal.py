@@ -33,7 +33,11 @@ while True:
             for line in file:
                 print(line)
     elif selection == "3":
-        print("Keyword Search under construction. Check back soon!")
+        kw = input("Enter keyword:  ").lower()
+        with open("entries.txt") as file:
+            for line in file:
+                if kw in line.lower():
+                    print(line)
     elif selection == "4":
         print(f"Total Word Count = {word_count()}. Longest Entry = {longest_line()}.")
     elif selection == "5":
