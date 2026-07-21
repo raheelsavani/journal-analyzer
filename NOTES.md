@@ -65,67 +65,40 @@ git push
 Worth adding `.DS_Store` to `.gitignore` eventually (see step 8 below) so this
 doesn't recur.
 
+Project: Journal / Log Analyzer
 
-## Project: Journal / Log Analyzer
+A command-line app: write daily log entries to a text file, then read back and analyze that file (word counts, longest entry, keyword search, etc.). Uses every concept covered so far: loops, while/break, try/except/else/finally, lists, string methods, f-strings, functions, and file I/O.
 
-A command-line app: write daily log entries to a text file, then read back
-and analyze that file (word counts, longest entry, keyword search, etc.).
-Uses every concept covered so far: loops, while/break, try/except/else/finally,
-lists, string methods, f-strings, functions, and file I/O.
+Build order
+Setup — git init, repo structure, first commit ✅ DONE
+Core loop — while loop + menu (add entry / view entries / quit) using break ✅ DONE
+Writing entries — open() in append mode, save entry to file ✅ DONE
+Reading entries back — open file, print past entries ✅ DONE 5a. Analysis features, part 1 — word count + longest entry (functions, return values) ✅ DONE 5b. Analysis features, part 2 — keyword search ✅ DONE
+Error handling — try/except throughout (e.g. missing file on first run) ⬅️ NEXT
+Polish + README — proper README describing the tool
+Git wrap-up — meaningful commit history, maybe a .gitignore (add .DS_Store to it)
+Step 5a notes (word count + longest entry, functions + return values)
+Redesigned menu: 1=New Entry, 2=View Entries, 3=Keyword Search, 4=Analyze, 5=Quit
+Considered a separate "Analyze" sub-menu with its own input prompt, then dropped it — Analyze just runs two functions back-to-back with no user choice, so no sub-menu, no extra input validation, and no inner loop needed
+word_count() and longest_line() each return their result instead of printing it, so option 4 can combine both into a single print(f"...") message
+Function definitions live at the top of journal.py, above the main while True: loop
+Wrote and tested each function standalone (temporary print(word_count()) call above the loop) before touching/restructuring the menu, to isolate logic bugs from wiring bugs
+word_count(): accumulator set to 0 above the loop; for each line, .strip() then .split() into a list of words, add len() of that list to the accumulator, return the accumulator after the loop
+longest_line(): longest = "" before the loop (guarantees the first real line always wins the first comparison, since any real entry has len() > 0); for each line, .strip() then .split() then " ".join() back into a single-spaced string (this normalizes away extra/doubled internal spaces so accidental double-spacing can't artificially inflate an entry's length); compare len() of that normalized string against len(longest) with >, update longest if greater; return longest after the loop
+Bug caught during testing: found elif selection == "1": was missing + "\n" on the file.write() call — confirmed via git diff that this was never actually committed/ pushed from the Mac (despite step 3/4 notes saying it was done), not a git pull issue. Fixed and will be committed with this update.
+Confirmed via testing: word_count() and longest_line() called directly inside an f-string (e.g. {word_count()}) get evaluated immediately when Python builds the string — no need to store the return value in a variable first, though doing so is also valid
+Real-world gap found (not solved yet, deferred to step 6 by design): a missing entries.txt file (e.g. on a freshly cloned machine, since it's gitignored) causes a crash if the user picks any option other than "1" first. Step 6 (error handling) is the intended fix.
+Step 5b notes (keyword search)
+Implemented inline under elif selection == "3": rather than as a separate function — deliberate choice; no reuse elsewhere in the program justified pulling it out
+Confirmed in works on strings, not just lists — it checks substring containment character-by-character (e.g. "cat" in "concatenate" is True), so no need to .split() the line into a list of words for this feature
+Case-insensitivity: kw = input(...).lower() lowercases the search term once at input time; each line is lowercased on the fly inside the if check via line.lower(), but line itself is never overwritten — so the original line (with its original casing) is what gets printed on a match
+Initially introduced a redundant variable (fline = line) meant to "hold the original," not realizing line already was the original and was never mutated — removed it once spotted; line.lower() computed inline in the if is sufficient, no separate stored variable needed
+Tested against entries.txt with mixed-case entries and mixed-case search terms (e.g. searching "Three" matched a line containing lowercase "three") — confirmed case-insensitive matching and original-casing display both work correctly
+Working style reminder (for Claude, when we resume)
+Socratic / hint-based — nudge toward the answer, don't hand it over
+Walk through logic in plain English before any code
+Stay within concepts already covered in futurecoder lessons — but new gaps (like file-write/file-read mechanics) get taught directly first, then practiced
+If stuck, ask a guiding question rather than explaining the fix
+Git habit while building
 
-### Build order
-1. **Setup** — git init, repo structure, first commit ✅ DONE
-2. **Core loop** — while loop + menu (add entry / view entries / quit) using `break` ✅ DONE
-3. **Writing entries** — `open()` in append mode, save entry to file ✅ DONE
-4. **Reading entries back** — open file, print past entries ✅ DONE
-5a. **Analysis features, part 1** — word count + longest entry (functions, return values) ✅ DONE
-5b. **Analysis features, part 2** — keyword search ⬅️ NEXT
-6. **Error handling** — try/except throughout (e.g. missing file on first run)
-7. **Polish + README** — proper README describing the tool
-8. **Git wrap-up** — meaningful commit history, maybe a `.gitignore` (add `.DS_Store` to it)
-
-### Step 5a notes (word count + longest entry, functions + return values)
-- Redesigned menu: 1=New Entry, 2=View Entries, 3=Keyword Search, 4=Analyze, 5=Quit
-- Considered a separate "Analyze" sub-menu with its own input prompt, then dropped it —
-  Analyze just runs two functions back-to-back with no user choice, so no sub-menu,
-  no extra input validation, and no inner loop needed
-- `word_count()` and `longest_line()` each `return` their result instead of printing it,
-  so option 4 can combine both into a single `print(f"...")` message
-- Function definitions live at the top of `journal.py`, above the main `while True:` loop
-- Wrote and tested each function standalone (temporary `print(word_count())` call above
-  the loop) before touching/restructuring the menu, to isolate logic bugs from wiring bugs
-- `word_count()`: accumulator set to `0` above the loop; for each line, `.strip()` then
-  `.split()` into a list of words, add `len()` of that list to the accumulator, `return`
-  the accumulator after the loop
-- `longest_line()`: `longest = ""` before the loop (guarantees the first real line always
-  wins the first comparison, since any real entry has `len() > 0`); for each line,
-  `.strip()` then `.split()` then `" ".join()` back into a single-spaced string (this
-  normalizes away extra/doubled internal spaces so accidental double-spacing can't
-  artificially inflate an entry's length); compare `len()` of that normalized string
-  against `len(longest)` with `>`, update `longest` if greater; `return longest` after
-  the loop
-- Bug caught during testing: found `elif selection == "1":` was missing `+ "\n"` on the
-  `file.write()` call — confirmed via `git diff` that this was never actually committed/
-  pushed from the Mac (despite step 3/4 notes saying it was done), not a git pull issue.
-  Fixed and will be committed with this update.
-- Confirmed via testing: `word_count()` and `longest_line()` called directly inside an
-  f-string (e.g. `{word_count()}`) get evaluated immediately when Python builds the
-  string — no need to store the return value in a variable first, though doing so is
-  also valid
-- Real-world gap found (not solved yet, deferred to step 6 by design): a missing
-  `entries.txt` file (e.g. on a freshly cloned machine, since it's gitignored) causes a
-  crash if the user picks any option other than "1" first. Step 6 (error handling) is
-  the intended fix.
-
-### Working style reminder (for Claude, when we resume)
-- Socratic / hint-based — nudge toward the answer, don't hand it over
-- Walk through logic in plain English before any code
-- Stay within concepts already covered in futurecoder lessons — but new gaps
-  (like file-write/file-read mechanics) get taught directly first, then practiced
-- If stuck, ask a guiding question rather than explaining the fix
-
-### Git habit while building
-Batch commits, don't have to push after every one. Pattern: modify code, modify
-NOTES.md, then `git add <file>` + `git commit -m "..."` separately for each file
-(code first, then notes), followed by a single `git push` at the end covering
-both commits.
+Batch commits, don't have to push after every one. Pattern: modify code, modify NOTES.md, then git add <file> + git commit -m "..." separately for each file (code first, then notes), followed by a single git push at the end covering both commits.
